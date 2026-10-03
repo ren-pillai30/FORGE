@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10151b">
+  <title>FORGE | Game help</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #10151b;
+      color: #edf2f7;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(ellipse at 50% -20%, #263747 0, #10151b 55%); }
+    main { width: min(820px, calc(100% - 32px)); margin: 0 auto; padding: 38px 0 28px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 26px; border-bottom: 1px solid #28333d; }
+    .brand { display: flex; align-items: center; gap: 13px; }
+    .mark { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 12px; color: #10151b; background: #79e0bd; font-size: 22px; font-weight: 900; }
+    h1 { margin: 0; font-size: 19px; letter-spacing: .12em; }
+    .subtitle { margin: 4px 0 0; color: #91a0ae; font-size: 13px; }
+    .status { display: flex; align-items: center; gap: 8px; color: #91a0ae; font-size: 12px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #87929e; }
+    .status.online .dot { background: #79e0bd; box-shadow: 0 0 10px #79e08080; }
+    .status.offline .dot { background: #ff7979; }
+    section { padding: 28px 0 22px; }
+    .intro { margin: 0 0 20px; color: #a8b4c0; line-height: 1.6; }
+    .messages { display: flex; flex-direction: column; gap: 14px; min-height: 230px; max-height: 52vh; overflow-y: auto; padding: 8px 4px 18px; }
+    .message { max-width: 85%; padding: 13px 16px; border: 1px solid #2d3944; border-radius: 14px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .message.assistant { align-self: flex-start; background: #1a222b; }
+    .message.user { align-self: flex-end; border-color: #327d6c; background: #19372f; }
+    .message.error { border-color: #744b4b; color: #ffb9b9; }
+    .composer { display: flex; flex-direction: column; align-items: stretch; gap: 14px; padding: 14px; border: 1px solid #303c47; border-radius: 15px; background: #171e26; }
+    textarea { display: block; width: 100%; min-height: 150px; max-height: 320px; resize: vertical; padding: 13px 12px; border: 1px solid #303c47; border-radius: 9px; outline: 0; background: #10151b; color: inherit; font: inherit; line-height: 1.5; }
+    button { align-self: flex-end; min-width: 92px; padding: 12px 16px; border: 0; border-radius: 10px; background: #79e0bd; color: #101b19; font: inherit; font-weight: 700; cursor: pointer; }
+    button:disabled { cursor: wait; opacity: .55; }
+    .controls { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr); gap: 16px; margin: 0 0 14px; }
+    .field { display: flex; flex-direction: column; gap: 7px; color: #bdc8d2; font-size: 13px; }
+    .field input[type="text"] { width: 100%; padding: 11px 12px; border: 1px solid #303c47; border-radius: 9px; outline: 0; background: #171e26; color: inherit; font: inherit; }
+    .hint-control { display: flex; align-items: center; gap: 11px; }
+    .hint-control input { flex: 1; accent-color: #79e0bd; }
+    .hint-control output { min-width: 42px; color: #9ae7cc; font-size: 12px; text-align: right; }
+    .upload { display: inline-flex; width: fit-content; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid #3a4c58; border-radius: 9px; color: #c4d1da; cursor: pointer; font-size: 13px; }
+    .upload input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+    .preview { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; color: #a8b4c0; font-size: 12px; }
+    .preview img { max-width: 120px; max-height: 76px; border: 1px solid #3a4c58; border-radius: 7px; object-fit: contain; }
+    .preview button { min-width: 0; padding: 6px 9px; background: #28333d; color: #edf2f7; font-size: 12px; }
+    .sources { margin: 10px 0 0; padding-left: 20px; color: #a8b4c0; font-size: 13px; }
+    .sources a { color: #9ae7cc; }
+    .hint, footer { color: #7f8d9a; font-size: 12px; }
+    .hint { margin: 10px 4px 0; }
+    footer { padding-top: 18px; border-top: 1px solid #28333d; }
+    footer a { color: #9ae7cc; text-decoration: none; }
+    @media (max-width: 520px) {
+      main { padding-top: 24px; }
+      .message { max-width: 94%; }
+      button { align-self: stretch; }
+      .controls { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="brand">
+        <div class="mark" aria-hidden="true">F</div>
+        <div>
+          <h1>FORGE</h1>
+          <p class="subtitle">Screenshot-aware game guide</p>
+        </div>
+      </div>
+      <div class="status" id="status" role="status" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="status-text">Checking server…</span>
+      </div>
+    </header>
+
+    <section aria-label="Game help">
+      <p class="intro">Type your question and name the game you’re playing. A screenshot is optional. Choose how much of the solution you want.</p>
+      <div class="messages" id="messages" aria-live="polite">
+        <div class="message assistant">Hi! Tell me what game you’re playing and where you need help. You can attach a screenshot and choose anything from a tiny hint to a full walkthrough.</div>
+      </div>
+      <form class="composer" id="chat-form">
+        <div class="controls">
+          <label class="field" for="game">Game <span>(required)</span>
+            <input id="game" type="text" list="supported-games-list" maxlength="120" placeholder="e.g. Hollow Knight" required>
+            <datalist id="supported-games-list"></datalist>
+          </label>
+          <label class="field" for="hint-level">How much help?
+            <div class="hint-control">
+              <input id="hint-level" type="range" min="1" max="10" value="5">
+              <output id="hint-output" for="hint-level">5 · Medium</output>
+            </div>
+          </label>
+        </div>
+        <textarea id="message" name="message" maxlength="2000" placeholder="Type your question here, e.g. How do I get to High Hrothgar?" aria-label="Your question" required></textarea>
+        <div>
+          <label class="upload" for="screenshot">＋ Add gameplay screenshot
+            <input id="screenshot" type="file" accept="image/jpeg,image/png,image/webp">
+          </label>
+          <div class="preview" id="preview" hidden></div>
+        </div>
+        <button id="send" type="submit">Send</button>
+      </form>
+      <p class="hint" id="coverage">1 = small hint · 10 = full step-by-step explanation. Search uses configured public game wikis; your question and optional screenshot are processed by Ollama on this computer. Enter to send · Shift+Enter for a new line.</p>
+    </section>
+
+    <footer>Local AI and public game-wiki search; no paid API keys. Sources may not cover every question, and unsupported questions are declined. <a href="/docs">Open API docs</a></footer>
+  </main>
+  <script>
+    const statusIndicator = document.getElementById("status");
+    const statusText = document.getElementById("status-text");
+    const messages = document.getElementById("messages");
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("message");
+    const gameInput = document.getElementById("game");
+    const gameOptions = document.getElementById("supported-games-list");
+    const coverage = document.getElementById("coverage");
+    const hintLevel = document.getElementById("hint-level");
+    const hintOutput = document.getElementById("hint-output");
+    const screenshotInput = document.getElementById("screenshot");
+    const preview = document.getElementById("preview");
+    const send = document.getElementById("send");
+    let selectedScreenshot = null;
+
+    function updateHintLabel() {
+      const level = Number(hintLevel.value);
+      const labels = ["Tiny hint", "Tiny hint", "Small hint", "Small hint", "Medium", "Medium", "Detailed", "Detailed", "Step by step", "Step by step"];
+      hintOutput.textContent = `${level} · ${labels[level - 1]}`;
+    }
+
+    hintLevel.addEventListener("input", updateHintLabel);
+
+    screenshotInput.addEventListener("change", () => {
+      const file = screenshotInput.files[0];
+      if (!file) return;
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        addMessage("Please choose a JPEG, PNG, or WebP screenshot.", "assistant", true);
+        screenshotInput.value = "";
+        return;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        addMessage("Screenshots must be 8 MB or smaller.", "assistant", true);
+        screenshotInput.value = "";
+        return;
+      }
+      selectedScreenshot = file;
+      preview.replaceChildren();
+      const image = document.createElement("img");
+      image.src = URL.createObjectURL(file);
+      image.alt = "Selected screenshot preview";
+      const name = document.createElement("span");
+      name.textContent = file.name;
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.textContent = "Remove";
+      remove.addEventListener("click", () => {
+        selectedScreenshot = null;
+        screenshotInput.value = "";
+        preview.hidden = true;
+      });
+      preview.append(image, name, remove);
+      preview.hidden = false;
+    });
+
+    async function checkStatus() {
+      try {
+        const response = await fetch("/api/health");
+        if (!response.ok) throw new Error("Health check failed");
+        const health = await response.json();
+        if (Array.isArray(health.supported_games)) {
+          gameOptions.replaceChildren(...health.supported_games.map((game) => {
+            const option = document.createElement("option");
+            option.value = game;
+            return option;
+          }));
+          coverage.textContent = `1 = small hint · 10 = full step-by-step explanation. Search uses public wikis for: ${health.supported_games.join(", ")}. Your question and optional screenshot are processed by Ollama on this computer. Enter to send · Shift+Enter for a new line.`;
+        }
+        statusIndicator.className = "status online";
+        if (!health.local_model.available) {
+          statusText.textContent = "App running · Install/start Ollama";
+        } else if (!health.local_model.installed) {
+          statusText.textContent = `App running · Run ollama pull ${health.local_model.model}`;
+        } else {
+          statusText.textContent = "App and local AI ready";
+        }
+      } catch {
+        statusIndicator.className = "status offline";
+        statusText.textContent = "Server unreachable";
+      }
+    }
+
+    function addMessage(text, role, isError = false) {
+      const item = document.createElement("div");
+      item.className = `message ${role}${isError ? " error" : ""}`;
+      item.textContent = text;
+      messages.appendChild(item);
+      messages.scrollTop = messages.scrollHeight;
+      return item;
+    }
+
+    function addSources(item, sources) {
+      const safeSources = (sources || []).filter((source) => {
+        try {
+          return ["http:", "https:"].includes(new URL(source.url).protocol);
+        } catch {
+          return false;
+        }
+      });
+      if (!safeSources.length) return;
+      const list = document.createElement("ul");
+      list.className = "sources";
+      for (const source of safeSources) {
+        const row = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = source.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = source.title || source.url;
+        row.appendChild(link);
+        list.appendChild(row);
+      }
+      item.appendChild(list);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function readScreenshot(file) {
+      if (!file) return Promise.resolve(null);
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(",", 2)[1]);
+        reader.onerror = () => reject(new Error("Could not read the screenshot."));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function formatErrorDetail(detail) {
+      if (typeof detail === "string") return detail;
+      if (Array.isArray(detail)) {
+        return detail.map((item) => {
+          if (typeof item === "string") return item;
+          if (!item || typeof item !== "object") return String(item);
+          const message = item.msg || item.message || item.detail;
+          const location = Array.isArray(item.loc) ? item.loc.filter((part) => part !== "body").join(" → ") : "";
+          if (message) return location ? `${location}: ${message}` : String(message);
+          return JSON.stringify(item);
+        }).filter(Boolean).join("\n") || "The request was rejected.";
+      }
+      if (detail && typeof detail === "object") {
+        if (typeof detail.message === "string") return detail.message;
+        if (typeof detail.detail === "string" || Array.isArray(detail.detail)) {
+          return formatErrorDetail(detail.detail);
+        }
+        return JSON.stringify(detail);
+      }
+      return "";
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const message = input.value.trim();
+      const game = gameInput.value.trim();
+      if (!message || !game || send.disabled) return;
+
+      send.disabled = true;
+      send.textContent = "Sending…";
+      try {
+        const screenshot = await readScreenshot(selectedScreenshot);
+        addMessage(`${game}: ${message}${selectedScreenshot ? `\n[Attached screenshot: ${selectedScreenshot.name}]` : ""}`, "user");
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            game,
+            question: message,
+            hint_level: Number(hintLevel.value),
+            screenshot_base64: screenshot,
+            screenshot_mime_type: selectedScreenshot?.type || null
+          })
+        });
+        const responseText = await response.text();
+        let data = {};
+        try {
+          data = responseText ? JSON.parse(responseText) : {};
+        } catch {
+          const responsePreview = responseText.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 300);
+          if (!response.ok) {
+            throw new Error(`Server returned HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ""}.${responsePreview ? ` ${responsePreview}` : " The server did not provide an error message."}`);
+          }
+          throw new Error("The server returned an unreadable response. Check the app logs and try again.");
+        }
+        if (!response.ok) {
+          const detail = formatErrorDetail(data.detail);
+          throw new Error(detail || `Server returned HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ""} without an error message.`);
+        }
+        if (typeof data.answer !== "string" || !data.answer.trim()) {
+          throw new Error(`Server returned HTTP ${response.status}, but the response did not contain an answer.`);
+        }
+        const answer = addMessage(data.answer, "assistant");
+        addSources(answer, data.sources);
+        input.value = "";
+        selectedScreenshot = null;
+        screenshotInput.value = "";
+        preview.hidden = true;
+      } catch (error) {
+        addMessage(`Could not get a response: ${error.message}`, "assistant", true);
+      } finally {
+        send.disabled = false;
+        send.textContent = "Send";
+        input.focus();
+      }
+    });
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    updateHintLabel();
+    checkStatus();
+    window.setInterval(checkStatus, 15000);
+  </script>
+</body>
+</html>
