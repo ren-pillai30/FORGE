@@ -2,7 +2,7 @@ import os
 import sqlite3
 from langchain_core.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "telemetry.db")
