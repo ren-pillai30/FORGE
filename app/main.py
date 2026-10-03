@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Any, Dict
@@ -7,7 +10,6 @@ from app.agent import get_agent
 app = FastAPI(title="Forge Telemetry API")
 agent_executor = get_agent()
 
-# Define API data models
 class ChatRequest(BaseModel):
     message: str
 
@@ -24,7 +26,6 @@ class ChatResponse(BaseModel):
 async def chat_endpoint(request: ChatRequest):
     result = agent_executor.invoke({"input": request.message})
     
-    # Extract the agent's thought process and database observations
     thoughts = []
     if "intermediate_steps" in result:
         for action, observation in result["intermediate_steps"]:
